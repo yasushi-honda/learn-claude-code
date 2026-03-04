@@ -2,7 +2,8 @@
 
 Claude Code のインストールと使用における一般的な問題の解決策をまとめます。
 
-> 参照: [公式トラブルシューティングドキュメント](https://code.claude.com/docs/en/troubleshooting)
+> **対応公式ドキュメント**: [Troubleshooting](https://code.claude.com/docs/en/troubleshooting)
+> **最終更新**: 2026年3月
 
 ---
 
@@ -19,12 +20,12 @@ claude --debug
 ```
 
 `/doctor` は以下を確認します：
-- インストールの種類、バージョン、検索機能
+- インストールの種類、バージョン、検索機能（ripgrep）
 - 自動更新状態と利用可能なバージョン
 - 無効な設定ファイル（JSONの不正、型エラー）
 - MCPサーバーの設定エラー
 - キーバインディング設定の問題
-- コンテキスト使用量の警告（大きな CLAUDE.md、高いMCPトークン使用量）
+- コンテキスト使用量の警告（大きな CLAUDE.md、高いMCPトークン使用量、到達不能なパーミッションルール）
 - プラグインとエージェントの読み込みエラー
 
 ---
@@ -35,12 +36,16 @@ claude --debug
 
 | 表示されるエラー | 解決策 |
 |--------------|--------|
-| `command not found: claude` | [PATHを修正する](#path-の問題) |
+| `command not found: claude` / `'claude' is not recognized` | [PATHを修正する](#path-の問題) |
 | `syntax error near unexpected token '<'` | [インストールスクリプトの問題](#インストールスクリプトが-html-を返す) |
+| `Invoke-Expression: Missing argument in parameter list` | [インストールスクリプトの問題](#インストールスクリプトが-html-を返す) |
 | `curl: (56) Failure writing output to destination` | [スクリプトを手動でダウンロード](#curl-エラー) |
 | `Killed` (Linux) | [スワップ領域を追加](#メモリ不足によるインストール中断) |
 | `TLS connect error` / `SSL/TLS secure channel` | [CA証明書を更新](#tls--ssl-エラー) |
+| `unable to get local issuer certificate` | [企業CA証明書を設定](#tls--ssl-エラー) |
 | `Failed to fetch version` | [ネットワークとプロキシを確認](#ネットワーク接続の確認) |
+| `irm is not recognized` / `&& is not valid` | [正しいシェルでコマンドを実行](#windows-シェルの問題) |
+| `Claude Code on Windows requires git-bash` | [Git Bash をインストール](#windows-git-bash-が見つからない) |
 | `Error loading shared library` | [バイナリバリアントの確認](#linux-musl--glibc-ミスマッチ) |
 | `Illegal instruction` (Linux) | [アーキテクチャの確認](#linux-アーキテクチャ不一致) |
 | `dyld: cannot load` (macOS) | [バイナリ非互換の修正](#macos-バイナリ非互換) |
@@ -97,6 +102,12 @@ $currentPath = [Environment]::GetEnvironmentVariable('PATH', 'User')
 [Environment]::SetEnvironmentVariable('PATH', "$currentPath;$env:USERPROFILE\.local\bin", 'User')
 ```
 
+**Windows CMD:**
+```batch
+echo %PATH% | findstr /i "local\bin"
+```
+System Settings → Environment Variables で `%USERPROFILE%\.local\bin` を User PATH に追加します。
+
 ---
 
 ### インストールスクリプトが HTML を返す
@@ -106,6 +117,11 @@ $currentPath = [Environment]::GetEnvironmentVariable('PATH', 'User')
 ```
 bash: line 1: syntax error near unexpected token `<'
 bash: line 1: `<!DOCTYPE html>'
+```
+
+PowerShell では:
+```
+Invoke-Expression: Missing argument in parameter list.
 ```
 
 **解決策:**
@@ -182,6 +198,34 @@ curl -fsSL https://claude.ai/install.sh | bash
 
 ---
 
+### Windows: シェルの問題
+
+- **`irm` が認識されない**: CMD ではなく PowerShell を使用するか、CMD 用インストーラーを使う
+  ```batch
+  curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+  ```
+
+- **`&&` が無効**: PowerShell で CMD コマンドを実行している。PowerShell 用インストーラーを使う：
+  ```powershell
+  irm https://claude.ai/install.ps1 | iex
+  ```
+
+### Windows: Git Bash が見つからない
+
+Claude Code on Windows は [Git for Windows](https://git-scm.com/downloads/win) が必要です。
+
+Git がインストール済みだが見つからない場合、settings.json で明示的にパスを指定：
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_GIT_BASH_PATH": "C:\\Program Files\\Git\\bin\\bash.exe"
+  }
+}
+```
+
+---
+
 ### Linux: musl / glibc ミスマッチ
 
 `Error loading shared library libstdc++.so.6` などのエラー：
@@ -225,6 +269,22 @@ brew install --cask claude-code
 
 ---
 
+### Docker でのインストールがハングする
+
+Docker コンテナ内で root として `/` からインストールするとハングすることがあります：
+
+```dockerfile
+WORKDIR /tmp
+RUN curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Docker Desktop を使用している場合、メモリ制限を増やすことも有効です：
+```bash
+docker build --memory=4g .
+```
+
+---
+
 ### 競合するインストールの確認
 
 複数のインストールが存在する場合：
@@ -233,6 +293,7 @@ brew install --cask claude-code
 # 全インストールを確認
 which -a claude
 ls -la ~/.local/bin/claude
+ls -la ~/.claude/local/
 npm -g ls @anthropic-ai/claude-code 2>/dev/null
 
 # npm のアンインストール
@@ -240,6 +301,20 @@ npm uninstall -g @anthropic-ai/claude-code
 
 # Homebrew のアンインストール
 brew uninstall --cask claude-code
+```
+
+---
+
+### ディレクトリの権限エラー
+
+```bash
+# 書き込み権限を確認
+test -w ~/.local/bin && echo "writable" || echo "not writable"
+test -w ~/.claude && echo "writable" || echo "not writable"
+
+# 権限がない場合
+sudo mkdir -p ~/.local/bin
+sudo chown -R $(whoami) ~/.local
 ```
 
 ---
@@ -255,7 +330,7 @@ brew uninstall --cask claude-code
 /permissions
 ```
 
-詳細は [パーミッション設定](../week-04/04-permissions.md) を参照してください。
+詳細は [パーミッション設定](https://code.claude.com/docs/en/permissions) を参照してください。
 
 ---
 
@@ -278,6 +353,7 @@ claude
 ログインコードが期限切れまたはコピー不完全な場合：
 
 - Enter を押して再試行し、ブラウザが開いたら素早く完了する
+- `c` を入力して URL をコピーし手動でブラウザに貼り付け
 - リモート/SSH セッションの場合、表示された URL をローカルブラウザで開く
 
 ---
@@ -345,6 +421,156 @@ rm .mcp.json
 
 ---
 
+## サンドボックスの問題
+
+### サンドボックスの依存関係が不足（Linux/WSL2）
+
+`/sandbox` でエラーが表示される場合、必要なパッケージをインストール：
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install bubblewrap socat
+```
+
+**Fedora:**
+```bash
+sudo dnf install bubblewrap socat
+```
+
+WSL1 はサンドボックス非対応です。WSL2 にアップグレードするか、サンドボックスなしで実行してください。
+
+### サンドボックス内でコマンドが失敗する
+
+一部のツールはサンドボックスと互換性がありません：
+
+- **Docker**: `excludedCommands` に `docker` を追加して サンドボックス外で実行
+- **watchman**: `jest --no-watchman` で対応
+- **ネットワーク接続が必要なCLIツール**: 初回はドメインへのアクセス許可を求められる。許可するとサンドボックス内で安全に実行可能に
+
+### サンドボックスのパス設定
+
+プロジェクトディレクトリ外への書き込みが必要な場合：
+
+```json
+{
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "allowWrite": ["~/.kube", "//tmp/build"]
+    }
+  }
+}
+```
+
+パスプレフィックスの意味：
+| プレフィックス | 意味 | 例 |
+|-----------|------|-----|
+| `//` | ファイルシステムルートからの絶対パス | `//tmp/build` → `/tmp/build` |
+| `~/` | ホームディレクトリからの相対パス | `~/.kube` → `$HOME/.kube` |
+| `/` | 設定ファイルのディレクトリからの相対パス | `/build` → `$SETTINGS_DIR/build` |
+
+### サンドボックスのエスケープハッチ
+
+サンドボックスの制約でコマンドが失敗した場合、Claude は `dangerouslyDisableSandbox` パラメータでサンドボックス外での再実行を試みることがあります。この場合は通常のパーミッションフローが適用されます。
+
+エスケープハッチを無効にするには：
+```json
+{
+  "sandbox": {
+    "allowUnsandboxedCommands": false
+  }
+}
+```
+
+---
+
+## MCPサーバーの問題
+
+### MCPサーバーが接続されない
+
+```bash
+# MCPサーバーの状態を確認
+/mcp
+
+# または設定を診断
+/doctor
+```
+
+設定ファイルを確認：
+- `~/.claude.json` - グローバル MCP 設定
+- `.mcp.json` - プロジェクト MCP 設定
+- `managed-mcp.json` - マネージド MCP 設定
+
+### MCPサーバーのデバッグ
+
+```bash
+# デバッグモードで起動
+claude --debug "mcp"
+```
+
+### 設定ファイルの場所
+
+| ファイル | 用途 |
+|---------|------|
+| `~/.claude/settings.json` | ユーザー設定（パーミッション、フック、モデルオーバーライド） |
+| `.claude/settings.json` | プロジェクト設定（ソース管理にコミット） |
+| `.claude/settings.local.json` | ローカルプロジェクト設定（コミットしない） |
+| `~/.claude.json` | グローバル状態（テーマ、OAuth、MCPサーバー） |
+| `.mcp.json` | プロジェクトMCPサーバー（ソース管理にコミット） |
+| `managed-mcp.json` | マネージド MCP サーバー |
+
+---
+
+## Hooks の問題
+
+### フックが実行されない
+
+1. settings.json のフック設定が正しいか確認：
+   ```bash
+   /hooks
+   ```
+
+2. デバッグモードでフック実行を監視：
+   ```bash
+   claude --debug "hooks"
+   ```
+
+3. マッチャーパターンがツール名と一致しているか確認（大文字小文字に注意）
+
+### フックのexit codeの意味
+
+| Exit Code | 動作 |
+|-----------|------|
+| `0` | 正常完了（ツール実行を許可、出力をフィードバック） |
+| `2`（PreToolUse） | ツール実行をブロック（出力が理由としてフィードバック） |
+| `2`（TeammateIdle / TaskCompleted） | 完了を拒否してフィードバックを返す |
+| その他の非0 | エラーとして処理（ツール実行は続行） |
+
+### 非同期フックのタイムアウト
+
+フックがタイムアウトする場合、`timeout` フィールドで調整：
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write $CLAUDE_FILE_PATHS",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## パフォーマンスの問題
 
 ### 高いCPU/メモリ使用量
@@ -366,7 +592,7 @@ Ctrl+C
 
 ### 検索・ファイル探索の問題
 
-`Search` ツール、`@file` メンション、カスタムエージェントが動作しない場合：
+`Search` ツール、`@file` メンション、カスタムエージェント/スキルが動作しない場合：
 
 **`ripgrep` のインストール:**
 
@@ -450,38 +676,73 @@ wsl --shutdown
 
 ---
 
-## MCPサーバーの問題
+## WSL の問題
 
-### MCPサーバーが接続されない
+### WSL2 でのインストールエラー
 
+WSL が Windows の `npm` を使用している場合：
 ```bash
-# MCPサーバーの状態を確認
-/mcp
-
-# または設定を確認
-/doctor
+npm config set os linux
+npm install -g @anthropic-ai/claude-code --force --no-os-check
 ```
 
-設定ファイルを確認：
-- `~/.claude.json` - グローバル MCP 設定
-- `.mcp.json` - プロジェクト MCP 設定
+### Node not found エラー
 
-### MCPサーバーのデバッグ
+`which npm` と `which node` が `/usr/` で始まるLinuxパスを指しているか確認。Windows パス（`/mnt/c/`）を指している場合は nvm を適切に設定：
 
 ```bash
-# デバッグモードで起動
-claude --debug "mcp"
+# ~/.bashrc または ~/.zshrc に追加
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 ```
 
-### 設定ファイルの場所
+---
 
-| ファイル | 用途 |
-|---------|------|
-| `~/.claude/settings.json` | ユーザー設定（パーミッション、フック、モデルオーバーライド） |
-| `.claude/settings.json` | プロジェクト設定（ソース管理にコミット） |
-| `.claude/settings.local.json` | ローカルプロジェクト設定（コミットしない） |
-| `~/.claude.json` | グローバル状態（テーマ、OAuth、MCPサーバー） |
-| `.mcp.json` | プロジェクトMCPサーバー（ソース管理にコミット） |
+## Markdown フォーマットの問題
+
+### コードブロックの言語タグ欠落
+
+生成されたMarkdownでコードブロックに言語タグがない場合：
+
+1. Claude に「コードブロックに適切な言語タグを追加して」と依頼
+2. PostToolUse フックで自動フォーマットを設定
+3. CLAUDE.md にフォーマットの規約を記述
+
+---
+
+## Agent Teams の問題
+
+### チームメイトが表示されない
+
+- in-process モードでは `Shift+Down` でチームメイト間を循環して確認
+- タスクがチーム編成に値する複雑さか Claude が判断している
+- split pane モードの場合、tmux が PATH に存在するか確認：
+  ```bash
+  which tmux
+  ```
+
+### パーミッション確認が多すぎる
+
+チームメイトのパーミッション確認がリードにバブルアップします。事前に `/permissions` で共通操作を許可設定してください。
+
+### チームメイトがエラーで停止する
+
+`Shift+Down` でチームメイトの出力を確認し、追加指示を与えるか、代替チームメイトを生成してください。
+
+### リードが作業完了前にシャットダウンする
+
+```
+Wait for your teammates to complete their tasks before proceeding
+```
+
+### tmux セッションの残骸
+
+チーム終了後に tmux セッションが残った場合：
+```bash
+tmux ls
+tmux kill-session -t <session-name>
+```
 
 ---
 
@@ -553,7 +814,7 @@ claude --verbose
 /compact "認証フローの実装に集中"
 ```
 
-コンテキスト使用率が 70-80% を超えたら圧縮を検討してください。
+コンテキスト使用率が 70-80% を超えたら圧縮を検討してください。`/context` で使用量をカラーグリッドで確認できます。
 
 ---
 
@@ -569,7 +830,7 @@ claude -c
 claude -r "session-name"
 ```
 
-プロジェクト全体の記憶は `CLAUDE.md` に記録してください。
+プロジェクト全体の記憶は `CLAUDE.md` に記録してください。`/memory` コマンドで Auto Memory の管理もできます。
 
 ---
 
@@ -581,7 +842,17 @@ claude -r "session-name"
 
 ### Q: MCP ツールが見つからない
 
-**A:** `/mcp` コマンドでサーバーの接続状態を確認し、設定ファイルの構文エラーがないかチェックしてください。
+**A:** `/mcp` コマンドでサーバーの接続状態を確認し、設定ファイルの構文エラーがないかチェックしてください。`/doctor` でもMCPの設定エラーを検出できます。
+
+---
+
+### Q: スキルが見つからない・トリガーされない
+
+**A:** 以下を確認してください：
+1. `SKILL.md` の description にユーザーが自然に使うキーワードが含まれているか
+2. `/skills` で利用可能なスキル一覧を確認
+3. `/context` でスキルの文字バジェット超過の警告がないか確認
+4. `disable-model-invocation: true` が設定されていないか確認（設定されている場合は手動呼び出しのみ可能）
 
 ---
 
@@ -592,3 +863,13 @@ claude -r "session-name"
 1. **`/bug` コマンド** - Claude Code 内から直接 Anthropic に問題を報告
 2. **GitHub リポジトリ** - [既知の問題を確認](https://github.com/anthropics/claude-code/issues)
 3. **Claude に直接質問** - Claude は自分のドキュメントへの組み込みアクセス権を持っています
+4. **`/doctor` コマンド** - 設定と環境の包括的な診断
+
+---
+
+> **公式リファレンス**
+> - [Troubleshooting](https://code.claude.com/docs/en/troubleshooting)
+> - [Sandboxing](https://code.claude.com/docs/en/sandboxing)
+> - [Hooks](https://code.claude.com/docs/en/hooks)
+> - [Agent Teams](https://code.claude.com/docs/en/agent-teams)
+> - [Network Config](https://code.claude.com/docs/en/network-config)

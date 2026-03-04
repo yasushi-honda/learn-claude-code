@@ -1,6 +1,7 @@
 # Week 8 公式ドキュメントリンク集
 
 > Week 8「上級・エンタープライズ」に関連する公式リソースのまとめ
+> すべてのURLは `https://code.claude.com/docs/en/` ベースです（2026年3月時点）
 
 ## セキュリティ
 
@@ -9,6 +10,7 @@
 | Security | https://code.claude.com/docs/en/security |
 | Permissions | https://code.claude.com/docs/en/permissions |
 | Anthropic Trust Center | https://trust.anthropic.com |
+| HackerOne脆弱性報告プログラム | https://hackerone.com/anthropic-vdp |
 
 ## サンドボックス
 
@@ -38,6 +40,7 @@
 | Claude Code on Amazon Bedrock | https://code.claude.com/docs/en/amazon-bedrock |
 | Claude Code on Google Vertex AI | https://code.claude.com/docs/en/google-vertex-ai |
 | Claude Code on Microsoft Foundry | https://code.claude.com/docs/en/microsoft-foundry |
+| Bedrock & Vertex proxies | https://code.claude.com/docs/en/bedrock-vertex-proxies |
 | Bedrock IAM documentation | https://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html |
 | Bedrock inference profiles | https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html |
 | Vertex AI IAM documentation | https://cloud.google.com/vertex-ai/docs/general/access-control |
