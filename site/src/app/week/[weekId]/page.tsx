@@ -1,5 +1,8 @@
 import { getWeeks, getWeekReadme, getWeekReferences, markdownToHtml, transformMdLinks } from "@/lib/content";
 import Link from "next/link";
+import Image from "next/image";
+import fs from "fs";
+import path from "path";
 
 export function generateStaticParams() {
   return getWeeks().map((w) => ({ weekId: w.id }));
@@ -45,6 +48,20 @@ export default async function WeekPage({ params }: Props) {
           {week.title}
         </h1>
       </header>
+
+      {/* Hero image */}
+      {fs.existsSync(path.join(process.cwd(), "public", "images", `week-${weekId}-hero.png`)) && (
+        <div className="mb-12 rounded-lg overflow-hidden border border-border">
+          <Image
+            src={`/images/week-${weekId}-hero.png`}
+            alt={`Week ${weekId}: ${week.title}`}
+            width={1024}
+            height={576}
+            className="w-full h-auto"
+            priority
+          />
+        </div>
+      )}
 
       {/* README content */}
       {readmeHtml && (
