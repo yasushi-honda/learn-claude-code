@@ -55,8 +55,8 @@ export default async function WeekPage({ params }: Props) {
           <Image
             src={`/images/week-${weekId}-hero.png`}
             alt={`Week ${weekId}: ${week.title}`}
-            width={1024}
-            height={576}
+            width={1376}
+            height={week.lessons.length <= 5 ? 589 : 768}
             className="w-full h-auto"
             priority
           />
