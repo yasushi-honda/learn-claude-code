@@ -7,10 +7,10 @@
 | リソース | URL |
 |---------|-----|
 | Create custom subagents | https://code.claude.com/docs/en/sub-agents |
-| Features overview（サブエージェント vs Agent Teams比較） | https://code.claude.com/docs/en/features-overview |
 | Hooks（ライフサイクルフック） | https://code.claude.com/docs/en/hooks |
 | Skills（スキルとの組み合わせ） | https://code.claude.com/docs/en/skills |
 | Plugins（プラグインによる配布） | https://code.claude.com/docs/en/plugins |
+| Plugins reference | https://code.claude.com/docs/en/plugins-reference |
 
 ## Agent Teams
 
@@ -52,15 +52,22 @@
 | リソース | URL |
 |---------|-----|
 | Manage costs effectively | https://code.claude.com/docs/en/costs |
+| Reduce token usage | https://code.claude.com/docs/en/costs#reduce-token-usage |
+| Agent team token costs | https://code.claude.com/docs/en/costs#agent-team-token-costs |
 | Monitoring usage（OpenTelemetry） | https://code.claude.com/docs/en/monitoring-usage |
-| Analytics dashboard | https://platform.claude.com/docs/en/build-with-claude/workspaces |
 | Status line設定 | https://code.claude.com/docs/en/statusline |
+| Workspaces | https://platform.claude.com/docs/en/build-with-claude/workspaces |
 
 ## 関連ドキュメント
 
 | リソース | URL |
 |---------|-----|
+| Best practices | https://code.claude.com/docs/en/best-practices |
 | Common workflows | https://code.claude.com/docs/en/common-workflows |
 | Settings（設定リファレンス） | https://code.claude.com/docs/en/settings |
 | Permissions（パーミッション設定） | https://code.claude.com/docs/en/permissions |
 | MCP（Model Context Protocol） | https://code.claude.com/docs/en/mcp |
+| Model configuration | https://code.claude.com/docs/en/model-config |
+| Bedrock/Vertex proxies | https://code.claude.com/docs/en/bedrock-vertex-proxies |
+| Security | https://code.claude.com/docs/en/security |
+| Sandboxing | https://code.claude.com/docs/en/sandboxing |

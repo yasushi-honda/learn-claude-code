@@ -1,338 +1,92 @@
-# Lesson 3: Hooks詳細リファレンス
+# Hooks詳細リファレンス -- 全イベント・スキーマ・制御フロー
 
-> 対応する公式ドキュメント: [Hooks reference](https://code.claude.com/docs/en/hooks)
+> **対応公式ドキュメント**: https://code.claude.com/docs/en/hooks
+> **想定所要時間**: 約60分
+> **難易度**: ★★★★☆
 
-## 学習目標
+## この章の学習目標
 
-- フックイベント一覧と各イベントのスキーマを理解できる
-- 設定スキーマ（JSON形式）を正確に記述できる
-- 環境変数を活用してフックを設定できる
-- 終了コードの意味を理解し、適切に実装できる
-- MCPツールフックを使って外部ツールの呼び出しを制御できる
-- デバッグコマンドを使ってフックの問題を解決できる
+この章を終えると、以下のことができるようになります：
 
-## 概要
+1. 全17種類のフックイベントの役割と入出力スキーマを理解できる
+2. PreToolUseの決定制御（`permissionDecision`）でツール呼び出しを細かく制御できる
+3. 終了コードとJSON出力フィールドの関係を正確に把握できる
+4. 環境変数の永続化（`CLAUDE_ENV_FILE`）や非同期フック（`async: true`）を活用できる
 
-前のレッスンではHooksの使い方を学びました。このレッスンでは、公式リファレンスに基づいてフックの技術仕様を詳しく解説します。実際のプロジェクトでフックを実装・デバッグする際の参考資料として活用してください。
+---
 
-## 本文
+## 1. フックイベント全リスト
 
-### フックのライフサイクル
+Claude Codeのアジェンティックループにおけるフックの実行ポイントを一覧で示します。
 
-Claude Codeのアジェンティックループにおけるフックの実行順序：
+### ライフサイクルフロー
 
 ```
 セッション開始
-    ↓ SessionStart
+    | SessionStart (startup / resume / clear / compact)
+    v
 ユーザープロンプト入力
-    ↓ UserPromptSubmit
+    | UserPromptSubmit
+    v
 ツール使用の判断
-    ↓ PreToolUse（ここでブロック可能）
+    | PreToolUse（ブロック可能）
+    | PermissionRequest（権限ダイアログ時）
+    v
 ツール実行
-    ↓ PostToolUse / PostToolUseFailure
+    | PostToolUse / PostToolUseFailure
+    v
+サブエージェント起動/終了
+    | SubagentStart / SubagentStop
+    v
 応答完了
-    ↓ Stop
-    ↓ SessionEnd（セッション終了時）
+    | Stop
+    | TaskCompleted
+    v
+コンテキスト圧縮
+    | PreCompact
+    v
+セッション終了
+    | SessionEnd
 ```
 
-### フックイベント詳細
+### 全イベント一覧
 
-#### SessionStart
+| イベント | 発火タイミング | ブロック可能 |
+|---------|-------------|:----------:|
+| `SessionStart` | セッション開始・再開・clear・compact後 | -- |
+| `UserPromptSubmit` | プロンプト送信時（Claude処理前） | はい |
+| `PreToolUse` | ツール実行前 | はい |
+| `PermissionRequest` | 権限ダイアログ表示時 | はい |
+| `PostToolUse` | ツール実行成功後 | -- |
+| `PostToolUseFailure` | ツール実行失敗後 | -- |
+| `Notification` | 通知発生時 | -- |
+| `SubagentStart` | サブエージェント起動時 | -- |
+| `SubagentStop` | サブエージェント終了時 | -- |
+| `Stop` | Claudeの応答完了時 | はい |
+| `TeammateIdle` | チームメンバーがアイドル状態になる時 | -- |
+| `TaskCompleted` | タスク完了マーク時 | -- |
+| `ConfigChange` | 設定ファイル変更時 | -- |
+| `WorktreeCreate` | ワークツリー作成時 | -- |
+| `WorktreeRemove` | ワークツリー削除時 | -- |
+| `PreCompact` | コンテキスト圧縮前 | -- |
+| `SessionEnd` | セッション終了時 | -- |
 
-セッション開始または再開時に発火します。
+---
 
-**マッチャー値:**
-- `startup`: 新規セッション開始
-- `resume`: 既存セッションの再開
-- `clear`: `/clear`実行後
-- `compact`: コンパクション後
+## 2. 設定スキーマ
 
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "SessionStart",
-  "source": "startup"
-}
-```
+### フックの配置場所
 
-**実用例: セッション開始時にコンテキストを注入する**
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cat .claude/context.md"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+| 場所 | ファイル | 用途 |
+|------|--------|------|
+| ユーザー設定 | `~/.claude/settings.json` | 個人の全プロジェクト共通フック |
+| プロジェクト設定 | `.claude/settings.json` | チーム共有フック |
+| ローカル設定 | `.claude/settings.local.json` | 個人のプロジェクト固有フック |
+| 管理ポリシー | Managed policy | 組織全体の強制フック |
+| プラグイン | `<plugin>/hooks/hooks.json` | プラグイン付属フック |
+| Skill/Agent | Frontmatterの`hooks`フィールド | Skill有効時のみのフック |
 
-#### UserPromptSubmit
-
-ユーザーがプロンプトを送信した後、Claudeが処理する前に発火します。
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "UserPromptSubmit",
-  "prompt": "ユーザーが入力したテキスト"
-}
-```
-
-**JSON出力:** `additionalContext`フィールドを使ってコンテキストを注入できます。
-
-**実用例: プロンプトの前処理**
-```bash
-#!/bin/bash
-INPUT=$(cat)
-PROMPT=$(echo "$INPUT" | jq -r '.prompt')
-
-# 特定のキーワードが含まれる場合に追加コンテキストを注入
-if echo "$PROMPT" | grep -q "database"; then
-  echo "Note: This project uses PostgreSQL 15 with the pg gem."
-fi
-```
-
-#### PreToolUse
-
-ツールが実行される前に発火します。終了コード2で実行をブロックできます。
-
-**マッチャー値:** ツール名（例: `Bash`, `Edit`, `Write`, `mcp__server__tool`）
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "PreToolUse",
-  "tool_name": "Bash",
-  "tool_input": {
-    "command": "rm -rf /important"
-  }
-}
-```
-
-**構造化JSON出力:**
-```json
-{
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "permissionDecision": "deny",
-    "permissionDecisionReason": "このコマンドは危険です"
-  }
-}
-```
-
-**`permissionDecision`の値:**
-- `"allow"`: プロンプトなしで許可
-- `"deny"`: 拒否して理由をClaudeに返す
-- `"ask"`: 通常の権限プロンプトを表示
-
-#### PostToolUse
-
-ツールが正常に実行された後に発火します。
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "PostToolUse",
-  "tool_name": "Write",
-  "tool_input": {
-    "file_path": "/path/to/file.ts",
-    "content": "..."
-  },
-  "tool_response": "File written successfully"
-}
-```
-
-**注意:** `PostToolUse`フックはツールが既に実行された後なので、アクションを取り消すことはできません。
-
-#### PostToolUseFailure
-
-ツール実行が失敗した後に発火します。
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "PostToolUseFailure",
-  "tool_name": "Bash",
-  "tool_input": {
-    "command": "npm test"
-  },
-  "error": "エラーメッセージ"
-}
-```
-
-**実用例: テスト失敗時にSlack通知**
-```bash
-#!/bin/bash
-INPUT=$(cat)
-ERROR=$(echo "$INPUT" | jq -r '.error // empty')
-TOOL=$(echo "$INPUT" | jq -r '.tool_name')
-
-if [ "$TOOL" = "Bash" ] && echo "$ERROR" | grep -q "test"; then
-  # Slack webhook通知（実際のURLに変更）
-  curl -s -X POST \
-    -H 'Content-type: application/json' \
-    --data "{\"text\":\"テスト失敗: $ERROR\"}" \
-    "$SLACK_WEBHOOK_URL"
-fi
-```
-
-#### PermissionRequest
-
-権限ダイアログが表示される時に発火します。
-
-**注意:** ノンインタラクティブモード（`-p`フラグ）では発火しません。自動的な権限判断には`PreToolUse`を使用してください。
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "PermissionRequest",
-  "tool_name": "Bash",
-  "tool_input": {
-    "command": "sudo apt-get install..."
-  }
-}
-```
-
-**構造化JSON出力:**
-```json
-{
-  "hookSpecificOutput": {
-    "hookEventName": "PermissionRequest",
-    "decision": {
-      "behavior": "allow"
-    }
-  }
-}
-```
-
-#### Notification
-
-Claude Codeが通知を送る時に発火します。
-
-**マッチャー値:**
-- `permission_prompt`: 権限プロンプト
-- `idle_prompt`: アイドル状態（入力待ち）
-- `auth_success`: 認証成功
-- `elicitation_dialog`: 確認ダイアログ
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "Notification",
-  "notification_type": "idle_prompt",
-  "message": "通知メッセージ"
-}
-```
-
-#### Stop
-
-Claudeが応答を終了した時に発火します。
-
-**重要:** `Stop`フックはタスク完了時だけでなく、Claudeが応答を返す度に発火します。ユーザーによる中断時は発火しません。
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "Stop",
-  "stop_hook_active": false
-}
-```
-
-**`stop_hook_active`:** `true`の場合、Stop フックがすでにトリガーされていることを示します。無限ループを防ぐために確認が必要です。
-
-**構造化JSON出力:**
-```json
-{
-  "decision": "block",
-  "reason": "テストがまだ実行されていません"
-}
-```
-
-#### SubagentStart / SubagentStop
-
-サブエージェントが起動・終了する時に発火します。
-
-**マッチャー値:** エージェントタイプ（`Bash`, `Explore`, `Plan`, またはカスタムエージェント名）
-
-**JSON入力スキーマ（SubagentStart）:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "SubagentStart",
-  "agent_type": "Explore"
-}
-```
-
-#### TeammateIdle
-
-エージェントチームのメンバーがアイドル状態になる時に発火します。
-
-#### TaskCompleted
-
-タスクが完了済みとしてマークされる時に発火します。
-
-#### ConfigChange
-
-設定ファイルがセッション中に変更された時に発火します。
-
-**マッチャー値:**
-- `user_settings`
-- `project_settings`
-- `local_settings`
-- `policy_settings`
-- `skills`
-
-**JSON入力スキーマ:**
-```json
-{
-  "session_id": "abc123",
-  "cwd": "/Users/user/myproject",
-  "hook_event_name": "ConfigChange",
-  "source": "project_settings",
-  "file_path": "/path/to/.claude/settings.json"
-}
-```
-
-#### WorktreeCreate / WorktreeRemove
-
-ワークツリーが作成・削除される時に発火します。デフォルトのgit動作を置き換えられます。
-
-#### PreCompact
-
-コンテキスト圧縮の前に発火します。
-
-**マッチャー値:**
-- `manual`: 手動で`/compact`を実行した場合
-- `auto`: 自動的なコンパクション
-
-### 設定スキーマ（完全版）
-
-`settings.json`のフック設定の完全なスキーマです：
+### 設定の基本構造
 
 ```json
 {
@@ -345,7 +99,8 @@ Claudeが応答を終了した時に発火します。
             "type": "command",
             "command": "シェルコマンド",
             "timeout": 30,
-            "run_in_background": false
+            "statusMessage": "処理中...",
+            "once": false
           }
         ]
       }
@@ -354,229 +109,400 @@ Claudeが応答を終了した時に発火します。
 }
 ```
 
-#### コマンドフックのフィールド
+### 共通フィールド
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:----:|------|
+| `type` | string | はい | `"command"`, `"http"`, `"prompt"`, `"agent"` |
+| `timeout` | number | いいえ | タイムアウト（秒）。デフォルト: 600秒 |
+| `statusMessage` | string | いいえ | 実行中に表示するメッセージ |
+| `once` | boolean | いいえ | `true`の場合、セッション中に一度だけ実行 |
+
+### タイプ別フィールド
+
+**Command hook:**
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `type` | string | `"command"`, `"http"`, `"prompt"`, `"agent"` |
 | `command` | string | 実行するシェルコマンド |
-| `timeout` | number | タイムアウト（秒）。デフォルト: 600秒（10分） |
-| `run_in_background` | boolean | 非同期実行するか |
+| `async` | boolean | `true`で非同期実行（結果を待たない） |
 
-#### HTTPフックのフィールド
+**HTTP hook:**
 
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `url` | string | リクエスト送信先URL |
+| `headers` | object | HTTPヘッダー（`$VAR_NAME`で環境変数展開） |
+| `allowedEnvVars` | string[] | headers内で展開を許可する環境変数リスト |
+
+**Prompt hook:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `prompt` | string | 判断に使うプロンプト。`$ARGUMENTS`で入力JSON参照 |
+| `model` | string | 使用モデル（デフォルト: Haiku） |
+
+**Agent hook:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `prompt` | string | 検証指示。`$ARGUMENTS`で入力JSON参照 |
+| `model` | string | 使用モデル |
+| `max_turns` | number | 最大ターン数（デフォルト: 50） |
+
+---
+
+## 3. 終了コードと出力制御
+
+### 終了コードの意味
+
+| 終了コード | 意味 |
+|-----------|------|
+| `0` | 処理を続行。stdoutの内容はClaudeのコンテキストに追加される |
+| `2` | アクションをブロック。stderrの内容がClaudeへのフィードバックになる |
+| その他 | 処理を続行。stderrはログに記録されるが、Claudeには返されない |
+
+### 終了コード2の挙動（イベント別）
+
+終了コード2でブロック可能かどうかはイベントによって異なります：
+
+| イベント | 終了コード2の挙動 |
+|---------|-----------------|
+| `UserPromptSubmit` | プロンプト処理をブロック |
+| `PreToolUse` | ツール呼び出しをブロック |
+| `PermissionRequest` | 権限リクエストを拒否 |
+| `Stop` | Claudeの停止をブロック（作業を続行させる） |
+| `PostToolUse` | ブロック不可（ツールは既に実行済み） |
+| `SessionStart` | ブロック不可 |
+| `Notification` | ブロック不可 |
+
+### JSON出力フィールド
+
+終了コード0で構造化JSONをstdoutに出力すると、より詳細な制御が可能です：
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `continue` | boolean | `false`でClaudeの処理を中断 |
+| `stopReason` | string | 中断理由 |
+| `suppressOutput` | boolean | `true`でstdoutをClaudeに渡さない |
+| `systemMessage` | string | システムメッセージとして注入 |
+
+---
+
+## 4. PreToolUseの入力と決定制御
+
+PreToolUseはフックの中で最も細かい制御が可能なイベントです。ツール呼び出しの前にJSON入力を検査し、許可・拒否・変更を行えます。
+
+### ツール別入力スキーマ
+
+各ツールの`tool_input`に含まれるフィールド：
+
+| ツール | フィールド |
+|--------|---------|
+| `Bash` | `command`, `description` |
+| `Write` | `file_path`, `content` |
+| `Edit` | `file_path`, `old_string`, `new_string` |
+| `Read` | `file_path` |
+| `Glob` | `pattern` |
+| `Grep` | `pattern` |
+| `WebFetch` | `url` |
+| `WebSearch` | `query` |
+| `Agent` | `prompt`, `description` |
+
+**入力例（Bash）:**
 ```json
 {
-  "type": "http",
-  "url": "http://localhost:8080/hooks/tool-use",
-  "headers": {
-    "Authorization": "Bearer $MY_TOKEN"
-  },
-  "allowedEnvVars": ["MY_TOKEN"],
-  "timeout": 30
+  "session_id": "abc123",
+  "cwd": "/Users/user/myproject",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "rm -rf /important",
+    "description": "Delete old files"
+  }
 }
 ```
 
-HTTPフックはツール実行データをPOSTリクエストで送信します。レスポンスボディはコマンドフックと同じJSON形式で返します。
+### PreToolUse決定制御
 
-#### プロンプトフックのフィールド
-
-```json
-{
-  "type": "prompt",
-  "prompt": "判断に使うプロンプト。{\"ok\": false, \"reason\": \"理由\"}で拒否",
-  "model": "claude-haiku-4-5",
-  "timeout": 30
-}
-```
-
-#### エージェントフックのフィールド
+構造化JSON出力で、ツール呼び出しの決定を制御できます：
 
 ```json
 {
-  "type": "agent",
-  "prompt": "検証内容の指示。$ARGUMENTSでフック入力を参照可能",
-  "timeout": 60,
-  "max_turns": 50
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "Use rg instead of grep for better performance"
+  }
 }
 ```
 
-### 環境変数
+**`permissionDecision`の値:**
 
-フックで使用できる環境変数：
+| 値 | 説明 |
+|----|------|
+| `"allow"` | 権限プロンプトなしで即座に許可 |
+| `"deny"` | ツール呼び出しをキャンセルし、理由をClaudeに返す |
+| `"ask"` | 通常通り権限プロンプトを表示 |
+
+**追加の制御フィールド:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `updatedInput` | object | ツール入力を書き換える（例: コマンドの変更） |
+| `additionalContext` | string | Claudeに追加コンテキストを注入する |
+
+**例: grepをrgに書き換える**
+
+```bash
+#!/bin/bash
+INPUT=$(cat)
+TOOL=$(echo "$INPUT" | jq -r '.tool_name')
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+
+if [ "$TOOL" = "Bash" ] && echo "$COMMAND" | grep -q "^grep "; then
+  NEW_CMD=$(echo "$COMMAND" | sed 's/^grep /rg /')
+  jq -n --arg cmd "$NEW_CMD" '{
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      updatedInput: { command: $cmd },
+      additionalContext: "grep was replaced with rg for better performance"
+    }
+  }'
+  exit 0
+fi
+
+exit 0
+```
+
+### PermissionRequest決定制御
+
+PermissionRequestフックでは、権限ダイアログの動作を制御できます：
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PermissionRequest",
+    "decision": {
+      "behavior": "allow"
+    }
+  }
+}
+```
+
+| `behavior` | 説明 |
+|-----------|------|
+| `"allow"` | 自動的に許可 |
+| `"deny"` | 自動的に拒否 |
+
+追加フィールド: `updatedInput`（入力変更）、`updatedPermissions`（権限変更）
+
+> **注意**: PermissionRequestはノンインタラクティブモード（`-p`フラグ）では発火しません。自動的な権限判断には`PreToolUse`を使用してください。
+
+---
+
+## 5. 特殊なイベントと高度な機能
+
+### SessionStartとマッチャー
+
+SessionStartの`source`フィールドがマッチャーの対象です：
+
+| マッチャー | 発火タイミング |
+|-----------|-------------|
+| `startup` | 新規セッション開始 |
+| `resume` | 既存セッションの再開（`claude --resume`） |
+| `clear` | `/clear`実行後 |
+| `compact` | `/compact`またはauto compact後 |
+
+### 環境変数の永続化
+
+フック内での`export`は次のコマンドには引き継がれません。環境変数をセッション中永続化するには`CLAUDE_ENV_FILE`を使います：
+
+```bash
+#!/bin/bash
+# SessionStartフック内で環境変数を永続化
+echo "MY_VAR=value" >> "$CLAUDE_ENV_FILE"
+echo "PROJECT_ENV=production" >> "$CLAUDE_ENV_FILE"
+```
+
+この変数はその後のすべてのコマンドとフックで利用できます。
+
+### フック内で使用できる環境変数
 
 | 変数名 | 説明 |
 |--------|------|
 | `$CLAUDE_PROJECT_DIR` | プロジェクトのルートディレクトリ |
 | `$CLAUDE_SESSION_ID` | 現在のセッションID |
+| `$CLAUDE_ENV_FILE` | 環境変数永続化用ファイルパス |
 
-**使用例:**
-```bash
-#!/bin/bash
-# プロジェクトのlintスクリプトを実行
-"$CLAUDE_PROJECT_DIR"/scripts/lint.sh
-```
+### Stopフック
 
-### 環境変数の永続化
+Stopフックは、Claudeが応答を完了した時に発火します。重要な注意点があります：
 
-`SessionStart`フックでの`export`は次のコマンドには引き継がれません。環境変数を永続化するには`CLAUDE_ENV_FILE`を使います：
+- ユーザーによる中断時は発火しない
+- `stop_hook_active`が`true`の場合、Stopフックが既にトリガーされている
+- 無限ループ防止のため、`stop_hook_active`チェックが必須
 
-```bash
-# フック内で環境変数ファイルに書き込む
-echo "MY_VAR=value" >> "$CLAUDE_ENV_FILE"
-```
-
-この変数はその後のコマンドやフックで利用できます。
-
-### MCPツールフックのマッチング
-
-MCPツールは`mcp__<server>__<tool>`という命名規則を使います：
-
-| パターン例 | マッチする対象 |
-|-----------|-------------|
-| `mcp__.*` | すべてのMCPツール |
-| `mcp__github__.*` | GitHubサーバーのすべてのツール |
-| `mcp__github__create_issue` | GitHubのissue作成ツールのみ |
-| `mcp__.*__write.*` | すべてのサーバーのwrite系ツール |
-
-**例:**
 ```json
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "mcp__github__.*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_name' | xargs -I{} echo \"GitHub MCP called: {}\" >> ~/mcp-log.txt"
-          }
-        ]
-      }
-    ]
-  }
+  "session_id": "abc123",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "タスクが完了しました。"
 }
 ```
 
 ### 非同期フック
 
-重い処理を非同期で実行するには`run_in_background: true`を使います：
+`async: true`を設定すると、フックがバックグラウンドで実行されます：
 
 ```json
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.file_path' | xargs ./heavy-analysis.sh",
-            "run_in_background": true
-          }
-        ]
-      }
-    ]
-  }
+  "type": "command",
+  "command": "jq -r '.tool_input.file_path' | xargs ./heavy-analysis.sh",
+  "async": true
 }
 ```
 
-非同期フックは：
+非同期フックの特性：
 - ツールの実行をブロックしない
-- 出力（stdout/stderr）はClaudeに返されない
+- stdoutとstderrはClaudeに返されない
 - 終了コードは無視される
+- ログ記録、通知送信、バックグラウンド分析に適している
 
-### Skillsとエージェント内のフック
-
-Skillのfrontmatterにフックを定義できます：
-
-```yaml
----
-name: code-review
-description: Review code for quality and security issues
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit"
-      hooks:
-        - type: command
-          command: ./scripts/check-before-edit.sh
 ---
 
-Code review instructions here...
-```
+## ハンズオン演習
 
-このフックはスキルがアクティブな間のみ有効です。
+### 演習 1: PreToolUse決定制御フック
 
-### デバッグ方法
+**目的**: PreToolUseのJSON出力で危険なコマンドをブロックする
+**前提条件**: `jq`がインストール済みであること
 
-#### verboseモード
-
-`Ctrl+O`でverboseモードをトグルすると、フックの出力がトランスクリプトに表示されます。
-
-#### デバッグフラグ
-
-```bash
-claude --debug
-```
-
-このフラグを使うと：
-- どのフックがマッチしたか表示
-- 終了コードが表示
-- フックコマンドの詳細ログが表示
-
-#### 手動テスト
-
-```bash
-# サンプルJSONをパイプでフックスクリプトに渡してテスト
-echo '{"tool_name":"Bash","tool_input":{"command":"ls"}}' | ./my-hook.sh
-echo $?  # 終了コードを確認
-```
-
-#### 一般的なデバッグチェックリスト
-
-1. **スクリプトが実行可能か確認**
+**手順**:
+1. `.claude/hooks/block-dangerous.sh`を作成する：
    ```bash
-   chmod +x ./my-hook.sh
+   #!/bin/bash
+   INPUT=$(cat)
+   TOOL=$(echo "$INPUT" | jq -r '.tool_name')
+   COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+
+   if [ "$TOOL" = "Bash" ]; then
+     if echo "$COMMAND" | grep -qE "rm -rf /|sudo rm|dd if="; then
+       jq -n '{
+         hookSpecificOutput: {
+           hookEventName: "PreToolUse",
+           permissionDecision: "deny",
+           permissionDecisionReason: "Dangerous command blocked by safety hook"
+         }
+       }'
+       exit 0
+     fi
+   fi
+   exit 0
    ```
+2. `chmod +x .claude/hooks/block-dangerous.sh`
+3. `.claude/settings.json`に登録する
+4. Claudeに`rm -rf /tmp/important`を含むコマンドの実行を依頼する
 
-2. **JSONが有効か確認**（trailing commaなどに注意）
+**期待される結果**: コマンドがブロックされ、Claudeが安全な代替案を提案する
 
-3. **`jq`がインストールされているか確認**
-   ```bash
-   brew install jq  # macOS
-   apt-get install jq  # Debian/Ubuntu
+### 演習 2: Stopフックでのタスク完了チェック
+
+**目的**: プロンプトフックでClaudeの応答完了時にタスク完了を検証する
+**前提条件**: なし
+
+**手順**:
+1. `~/.claude/settings.json`に以下を追加する：
+   ```json
+   {
+     "hooks": {
+       "Stop": [
+         {
+           "hooks": [
+             {
+               "type": "prompt",
+               "prompt": "Check if the assistant's last response indicates all requested tasks are complete. If tasks remain incomplete, respond with {\"ok\": false, \"reason\": \"description of remaining tasks\"}. If complete, respond with {\"ok\": true}."
+             }
+           ]
+         }
+       ]
+     }
+   }
    ```
+2. Claudeに複数ステップの作業（例: 「ファイルを作成し、テストを書き、lintを実行して」）を依頼する
+3. Claudeが途中で止まった場合にフックが作業を再開させることを確認する
 
-4. **絶対パスを使用する**（相対パスはcwdに依存するため）
+**期待される結果**: Claudeが全タスクを完了するまで停止しない
 
-5. **シェルプロファイルの`echo`文を確認**
-   フックはノンインタラクティブシェルで実行されるため、`~/.zshrc`などの無条件の`echo`がJSON出力を汚染することがある
+### 演習 3: SessionStart環境変数の永続化
 
-### セキュリティの考慮事項
+**目的**: CLAUDE_ENV_FILEを使ってセッション中の環境変数を永続化する
+**前提条件**: なし
 
-フックはシェルコマンドを実行するため、セキュリティに注意が必要です：
+**手順**:
+1. `.claude/settings.json`に以下を追加する：
+   ```json
+   {
+     "hooks": {
+       "SessionStart": [
+         {
+           "matcher": "startup",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "echo \"SESSION_START_TIME=$(date +%Y-%m-%dT%H:%M:%S)\" >> \"$CLAUDE_ENV_FILE\""
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
+2. Claude Codeを起動する
+3. Claudeに`echo $SESSION_START_TIME`を実行させる
 
-1. **信頼できないフックを実行しない**: プロジェクトの`.claude/settings.json`にあるフックが悪意のある内容を含んでいないか確認する
+**期待される結果**: セッション開始時刻が環境変数として保持され、以降のコマンドで参照できる
 
-2. **コマンドインジェクションを避ける**: フックに外部データを渡す際は適切にエスケープする
+---
 
-3. **最小権限の原則**: フックが必要な最小限の権限のみを持つようにする
+## よくある質問
 
-4. **フックの出力を確認する**: 機密情報がログに残らないよう注意する
+**Q: PreToolUseとPermissionRequestの違いは何ですか?**
+A: PreToolUseはすべてのツール呼び出しの前に発火し、インタラクティブ/ノンインタラクティブの両方で動作します。PermissionRequestはインタラクティブモードで権限ダイアログが表示される時のみ発火します。自動化には`PreToolUse`を使うのが推奨です。
+
+**Q: `once: true`はどのような場面で使いますか?**
+A: セッション中に一度だけ実行すればよいフック（初期化処理、ウェルカムメッセージなど）に使います。`once: true`を設定すると、同じセッション内で2回目以降は発火しません。
+
+**Q: MCPツールのフックマッチングはどうなりますか?**
+A: MCPツールは`mcp__<server>__<tool>`という命名規則です。`mcp__.*`で全MCPツール、`mcp__github__.*`でGitHubサーバーの全ツール、`mcp__github__create_issue`で特定ツールのみマッチします。
+
+**Q: フックのタイムアウトを変更できますか?**
+A: はい。`timeout`フィールドで秒単位で指定できます。デフォルトは600秒（10分）です。短いタイムアウトを設定するとフックの応答性が向上しますが、重い処理では切り詰められる可能性があります。
+
+---
 
 ## まとめ
 
-- 各フックイベントには固有のJSONスキーマと用途がある
-- 終了コード0で続行、2でブロック、その他はログ記録のみ
-- 構造化JSON出力でより細かい制御が可能（`allow`, `deny`, `ask`）
-- `$CLAUDE_PROJECT_DIR`と`$CLAUDE_SESSION_ID`環境変数が使用可能
-- MCPツールは`mcp__<server>__<tool>`パターンでマッチングできる
-- `run_in_background: true`で非同期実行が可能
-- `--debug`フラグと`Ctrl+O`でデバッグできる
+この章で学んだ重要ポイント：
 
-## 公式リファレンス
+- 全17種類のフックイベントがClaude Codeのライフサイクル全体をカバー
+- 4つのフックタイプ: command、http、prompt、agent
+- 配置場所は6箇所（ユーザー設定、プロジェクト設定、ローカル、管理ポリシー、プラグイン、Skill内）
+- 終了コード0で続行、2でブロック。JSON出力でさらに細かい制御が可能
+- PreToolUseの`permissionDecision`でallow/deny/askを制御し、`updatedInput`で入力を書き換え可能
+- PermissionRequestの`behavior`でallow/denyを制御
+- SessionStartの`compact`マッチャーでコンパクション後のコンテキスト再注入が可能
+- `CLAUDE_ENV_FILE`で環境変数をセッション中永続化できる
+- `async: true`でバックグラウンド実行が可能
 
-- [Hooks reference](https://code.claude.com/docs/en/hooks)
-- [Hooks guide](https://code.claude.com/docs/en/hooks-guide)
-- [Security considerations](https://code.claude.com/docs/en/hooks#security-considerations)
-- [バリデーターの実装例](https://github.com/anthropics/claude-code/blob/main/examples/hooks/bash_command_validator_example.py)
+## 次のステップ
+
+次の章「プラグインシステム概要」では、Skills・Hooks・MCPサーバーをパッケージ化して配布するプラグインの仕組みを学びます。
+
+---
+
+> **公式リファレンス**
+> - [Hooks reference](https://code.claude.com/docs/en/hooks)
+> - [Hooks guide](https://code.claude.com/docs/en/hooks-guide)
+> - [Security considerations](https://code.claude.com/docs/en/security)

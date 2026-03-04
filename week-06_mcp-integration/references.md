@@ -82,16 +82,24 @@
 
 ```bash
 # MCPサーバーの追加
-claude mcp add --transport http <name> <url>     # HTTPサーバー
-claude mcp add --transport stdio <name> -- <cmd> # stdioサーバー
+claude mcp add --transport http <name> <url>          # HTTPサーバー（推奨）
+claude mcp add --transport stdio <name> -- <cmd>      # stdioサーバー
+claude mcp add --transport sse <name> <url>           # SSEサーバー（非推奨）
 
 # MCPサーバーの管理
-claude mcp list                                  # 一覧表示
-claude mcp get <name>                            # 詳細確認
-claude mcp remove <name>                         # 削除
+claude mcp list                                       # 一覧表示
+claude mcp get <name>                                 # 詳細確認
+claude mcp remove <name>                              # 削除
+claude mcp add-json <name> '<json>'                   # JSON設定で追加
+claude mcp add-from-claude-desktop                    # Claude Desktopからインポート
+claude mcp reset-project-choices                      # .mcp.json承認をリセット
+
+# スコープの指定
+claude mcp add --scope project ...                    # プロジェクト共有（.mcp.json）
+claude mcp add --scope user ...                       # 全プロジェクトで個人利用
 
 # Chrome連携
-claude --chrome                                  # Chrome連携で起動
+claude --chrome                                       # Chrome連携で起動
 # Claude Code内で: /chrome
 
 # MCPサーバー状態確認
@@ -99,6 +107,11 @@ claude --chrome                                  # Chrome連携で起動
 
 # Claude CodeをMCPサーバーとして起動
 claude mcp serve
+
+# 環境変数
+MAX_MCP_OUTPUT_TOKENS=50000 claude                    # 出力トークン上限変更
+ENABLE_TOOL_SEARCH=auto claude                        # Tool Search制御
+ENABLE_CLAUDEAI_MCP_SERVERS=false claude              # Claude.aiサーバー無効化
 ```
 
 ---
