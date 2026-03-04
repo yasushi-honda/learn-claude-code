@@ -1,0 +1,394 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════
+   Obsidian Library — Design System
+   ═══════════════════════════════════════════ */
+
+@theme {
+  --color-obsidian: #08080C;
+  --color-obsidian-light: #111118;
+  --color-surface: #1A1A24;
+  --color-surface-hover: #222230;
+  --color-border: #2A2A36;
+  --color-border-hover: #3A3A48;
+  --color-ivory: #E8E2D8;
+  --color-ivory-dim: #C0BAB0;
+  --color-lavender: #9690A0;
+  --color-muted: #5A5668;
+  --color-copper: #C8956C;
+  --color-copper-glow: #E8B888;
+  --color-copper-dim: #8A6545;
+  --color-steel: #7B9FD4;
+  --color-sage: #7BC88C;
+  --color-code-bg: #0C0C14;
+
+  --font-serif: "Cormorant Garamond", "Shippori Mincho", Georgia, serif;
+  --font-body: "Noto Sans JP", "Helvetica Neue", sans-serif;
+  --font-mono: "IBM Plex Mono", "Menlo", monospace;
+}
+
+/* ── Base ────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-obsidian);
+  color: var(--color-ivory);
+  line-height: 1.75;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-copper) 35%, transparent);
+  color: var(--color-ivory);
+}
+
+/* ── Noise Texture Overlay ───────────────── */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* ── Scrollbar ───────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-obsidian);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
+}
+
+/* ═══════════════════════════════════════════
+   Markdown Content Styling
+   ═══════════════════════════════════════════ */
+
+.markdown-body {
+  font-family: var(--font-body);
+  color: var(--color-ivory-dim);
+  font-size: 0.9375rem;
+  line-height: 1.85;
+}
+
+.markdown-body h1 {
+  font-family: var(--font-serif);
+  font-size: 2.369rem;
+  font-weight: 600;
+  color: var(--color-ivory);
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.markdown-body h2 {
+  font-family: var(--font-serif);
+  font-size: 1.777rem;
+  font-weight: 600;
+  color: var(--color-ivory);
+  margin-top: 2.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+}
+
+.markdown-body h3 {
+  font-family: var(--font-serif);
+  font-size: 1.333rem;
+  font-weight: 600;
+  color: var(--color-ivory);
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.35;
+}
+
+.markdown-body h4 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--color-ivory);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-body p {
+  margin-bottom: 1rem;
+}
+
+.markdown-body a {
+  color: var(--color-copper);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-copper) 30%, transparent);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.markdown-body a:hover {
+  color: var(--color-copper-glow);
+  border-bottom-color: var(--color-copper-glow);
+}
+
+.markdown-body strong {
+  color: var(--color-ivory);
+  font-weight: 600;
+}
+
+.markdown-body em {
+  color: var(--color-lavender);
+  font-style: italic;
+}
+
+/* ── Lists ───────────────────────────────── */
+
+.markdown-body ul {
+  list-style: none;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body ul > li {
+  position: relative;
+  padding-left: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.markdown-body ul > li::before {
+  content: "›";
+  position: absolute;
+  left: -1rem;
+  color: var(--color-copper-dim);
+  font-weight: 700;
+}
+
+.markdown-body ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+  list-style: decimal;
+}
+
+.markdown-body ol > li {
+  margin-bottom: 0.35rem;
+  padding-left: 0.25rem;
+}
+
+.markdown-body ol > li::marker {
+  color: var(--color-copper-dim);
+  font-weight: 600;
+}
+
+/* ── Code ────────────────────────────────── */
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background-color: var(--color-code-bg);
+  color: var(--color-copper-glow);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.markdown-body pre {
+  background-color: var(--color-code-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+  position: relative;
+}
+
+.markdown-body pre::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-copper-dim);
+  box-shadow: 14px 0 0 var(--color-muted), 28px 0 0 var(--color-muted);
+  opacity: 0.6;
+}
+
+.markdown-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-ivory-dim);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+/* ── Tables ──────────────────────────────── */
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.markdown-body thead th {
+  background-color: var(--color-surface);
+  color: var(--color-ivory);
+  font-weight: 500;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--color-copper-dim);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.markdown-body tbody td {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.markdown-body tbody tr:hover {
+  background-color: color-mix(in srgb, var(--color-surface) 50%, transparent);
+}
+
+/* ── Blockquotes ─────────────────────────── */
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--color-copper);
+  padding: 0.75rem 1.25rem;
+  margin: 1rem 0 1.25rem;
+  background-color: color-mix(in srgb, var(--color-surface) 60%, transparent);
+  border-radius: 0 6px 6px 0;
+}
+
+.markdown-body blockquote p {
+  margin-bottom: 0.25rem;
+  color: var(--color-lavender);
+  font-style: italic;
+}
+
+/* ── Horizontal Rule ─────────────────────── */
+
+.markdown-body hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  margin: 2rem 0;
+}
+
+/* ── Highlight.js Token Colors ───────────── */
+
+.hljs {
+  color: var(--color-ivory-dim);
+  background: var(--color-code-bg);
+}
+
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #c792ea;
+}
+
+.hljs-string,
+.hljs-attr {
+  color: var(--color-copper-glow);
+}
+
+.hljs-number,
+.hljs-literal {
+  color: #f78c6c;
+}
+
+.hljs-comment {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.hljs-built_in,
+.hljs-type {
+  color: #82aaff;
+}
+
+.hljs-function .hljs-title,
+.hljs-title.function_ {
+  color: #82aaff;
+}
+
+.hljs-variable,
+.hljs-template-variable {
+  color: #f07178;
+}
+
+.hljs-section,
+.hljs-title {
+  color: var(--color-copper);
+}
+
+.hljs-meta {
+  color: var(--color-lavender);
+}
+
+/* ═══════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out both;
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* ── Staggered Delays ────────────────────── */
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+.delay-6 { animation-delay: 0.6s; }
+.delay-7 { animation-delay: 0.7s; }
+.delay-8 { animation-delay: 0.8s; }
