@@ -2,13 +2,7 @@
   "hosting": {
     "public": "out",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/404.html"
-      }
-    ],
-    "headers": [
+"headers": [
       {
         "source": "**/*.@(js|css)",
         "headers": [

@@ -1,4 +1,4 @@
-import { getWeeks, getWeekReadme, getWeekReferences, markdownToHtml } from "@/lib/content";
+import { getWeeks, getWeekReadme, getWeekReferences, markdownToHtml, transformMdLinks } from "@/lib/content";
 import Link from "next/link";
 
 export function generateStaticParams() {
@@ -16,10 +16,14 @@ export default async function WeekPage({ params }: Props) {
   if (!week) return <div className="text-muted">Week not found.</div>;
 
   const readme = getWeekReadme(weekId);
-  const readmeHtml = readme ? await markdownToHtml(readme) : null;
+  const readmeHtml = readme
+    ? await markdownToHtml(transformMdLinks(readme, { weekId, type: "week" }))
+    : null;
 
   const refs = getWeekReferences(weekId);
-  const refsHtml = refs ? await markdownToHtml(refs) : null;
+  const refsHtml = refs
+    ? await markdownToHtml(transformMdLinks(refs, { weekId, type: "week" }))
+    : null;
 
   return (
     <article>

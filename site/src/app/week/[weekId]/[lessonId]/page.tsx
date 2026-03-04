@@ -1,4 +1,4 @@
-import { getWeeks, getLessonContent, markdownToHtml } from "@/lib/content";
+import { getWeeks, getLessonContent, markdownToHtml, transformMdLinks } from "@/lib/content";
 import Link from "next/link";
 import LessonNav from "@/components/LessonNav";
 
@@ -26,7 +26,7 @@ export default async function LessonPage({ params }: Props) {
   const content = getLessonContent(weekId, lessonId);
   if (!content) return <div className="text-muted">Lesson not found.</div>;
 
-  const html = await markdownToHtml(content);
+  const html = await markdownToHtml(transformMdLinks(content, { weekId, type: "lesson" }));
 
   // Find prev/next
   const lessonIndex = week.lessons.findIndex((l) => l.slug === lessonId);

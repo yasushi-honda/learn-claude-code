@@ -1,4 +1,4 @@
-import { getAppendices, getAppendixContent, markdownToHtml } from "@/lib/content";
+import { getAppendices, getAppendixContent, markdownToHtml, transformMdLinks } from "@/lib/content";
 import Link from "next/link";
 
 export function generateStaticParams() {
@@ -15,7 +15,7 @@ export default async function AppendixPage({ params }: Props) {
   const content = getAppendixContent(id);
   if (!content) return <div className="text-muted">Page not found.</div>;
 
-  const html = await markdownToHtml(content);
+  const html = await markdownToHtml(transformMdLinks(content, { type: "appendix" }));
 
   // Find prev/next appendix
   const idx = appendices.findIndex((a) => a.slug === id);

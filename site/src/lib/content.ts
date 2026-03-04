@@ -141,6 +141,66 @@ export function getAppendixContent(slug: string): string | null {
   return fs.readFileSync(filePath, "utf-8");
 }
 
+/**
+ * Transform internal .md links to site routes.
+ * e.g. ./01-what-is-claude-code.md → /week/01/01-what-is-claude-code/
+ */
+export function transformMdLinks(
+  markdown: string,
+  context: { weekId?: string; type: "week" | "lesson" | "appendix" }
+): string {
+  return markdown.replace(
+    /\]\((?!https?:\/\/)([^)]+\.md(?:#[^)]*)?)\)/g,
+    (match, href: string) => {
+      const [filePart, anchor] = href.split("#");
+      const anchorSuffix = anchor ? `#${anchor}` : "";
+
+      // Cross-week: ../week-XX_name/README.md
+      const crossWeekReadme = filePart.match(
+        /\.\.\/week-(\d{2})[^/]*\/README\.md/
+      );
+      if (crossWeekReadme) {
+        return `](/week/${crossWeekReadme[1]}/${anchorSuffix})`;
+      }
+
+      // Cross-week: ../week-XX_name/lesson.md
+      const crossWeekLesson = filePart.match(
+        /\.\.\/week-(\d{2})[^/]*\/([^/]+)\.md/
+      );
+      if (crossWeekLesson) {
+        return `](/week/${crossWeekLesson[1]}/${crossWeekLesson[2]}/${anchorSuffix})`;
+      }
+
+      // Same-directory links
+      const filename = filePart.replace(/^\.\//, "").replace(/\.md$/, "");
+
+      if (filename === "README") {
+        return context.weekId
+          ? `](/week/${context.weekId}/${anchorSuffix})`
+          : match;
+      }
+
+      if (filename === "references") {
+        // references.md is rendered at the bottom of the week page
+        return context.weekId
+          ? `](/week/${context.weekId}/${anchorSuffix})`
+          : match;
+      }
+
+      // Regular lesson/appendix link
+      if (context.type === "appendix") {
+        return `](/appendix/${filename}/${anchorSuffix})`;
+      }
+
+      if (context.weekId) {
+        return `](/week/${context.weekId}/${filename}/${anchorSuffix})`;
+      }
+
+      return match;
+    }
+  );
+}
+
 export async function markdownToHtml(markdown: string): Promise<string> {
   const result = await unified()
     .use(remarkParse)
