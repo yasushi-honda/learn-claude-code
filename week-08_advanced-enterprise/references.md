@@ -26,6 +26,7 @@
 | リソース | URL |
 |---------|-----|
 | Enterprise deployment overview | https://code.claude.com/docs/en/third-party-integrations |
+| Platforms and integrations | https://code.claude.com/docs/en/platforms |
 | Authentication | https://code.claude.com/docs/en/authentication |
 | Network configuration | https://code.claude.com/docs/en/network-config |
 | LLM gateway configuration | https://code.claude.com/docs/en/llm-gateway |

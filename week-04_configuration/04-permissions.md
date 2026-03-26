@@ -1,8 +1,9 @@
 # パーミッションシステム
 
-> **対応公式ドキュメント**: https://code.claude.com/docs/en/permissions
+> **対応公式ドキュメント**: https://code.claude.com/docs/en/permission-modes / https://code.claude.com/docs/en/permissions
 > **想定所要時間**: 約60分
 > **難易度**: ★★★☆☆
+> **公式ドキュメント検証日**: 2026-03-26
 
 ## この章の学習目標
 
