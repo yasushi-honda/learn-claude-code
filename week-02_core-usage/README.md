@@ -28,6 +28,7 @@ Week 2 では Claude Code の日常的な操作を習得します。対話モー
 | 03 | [03-common-workflows.md](./03-common-workflows.md) | 基本ワークフロー | 探索・デバッグ・リファクタリング・テスト・Plan mode・画像・セッション管理 | 約60分 |
 | 04 | [04-file-operations.md](./04-file-operations.md) | ファイル操作とツール体系 | Read / Edit / Write / Glob / Grep / Bash / Web / Code intelligence | 約60分 |
 | 05 | [05-git-integration.md](./05-git-integration.md) | Git 統合 | コミット・ブランチ・PR 作成・コンフリクト解消・worktree・GitHub Actions | 約60分 |
+| 06 | [06-code-review.md](./06-code-review.md) | コードレビュー | マルチエージェント PR 解析・REVIEW.md・重要度レベル・料金 | 約45分 |
 | -- | [references.md](./references.md) | 公式リファレンス | Week 2 対応の公式ドキュメントリンク集 | -- |
 
 ## 学習の進め方

@@ -1,8 +1,9 @@
 # エンタープライズ導入
 
-> **対応公式ドキュメント**: https://code.claude.com/docs/en/third-party-integrations
+> **対応公式ドキュメント**: https://code.claude.com/docs/en/third-party-integrations / https://code.claude.com/docs/en/platforms
 > **想定所要時間**: 約60分
 > **難易度**: ★★★★☆
+> **公式ドキュメント検証日**: 2026-03-26
 
 ## この章の学習目標
 

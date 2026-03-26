@@ -58,6 +58,21 @@
 | Status line設定 | https://code.claude.com/docs/en/statusline |
 | Workspaces | https://platform.claude.com/docs/en/build-with-claude/workspaces |
 
+## Channels
+
+| リソース | URL |
+|---------|-----|
+| Push events into a running session with channels | https://code.claude.com/docs/en/channels |
+| Channels reference | https://code.claude.com/docs/en/channels-reference |
+
+## スケジュールタスク
+
+| リソース | URL |
+|---------|-----|
+| Run prompts on a schedule | https://code.claude.com/docs/en/scheduled-tasks |
+| Schedule tasks on the web | https://code.claude.com/docs/en/web-scheduled-tasks |
+| Desktop scheduled tasks | https://code.claude.com/docs/en/desktop |
+
 ## 関連ドキュメント
 
 | リソース | URL |

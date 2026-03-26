@@ -12,6 +12,10 @@
 | Common Workflows | https://code.claude.com/docs/en/common-workflows | 03 - 基本ワークフロー, 05 - Git 統合 |
 | How Claude Code Works | https://code.claude.com/docs/en/how-claude-code-works | 04 - ファイル操作とツール体系 |
 | Quickstart | https://code.claude.com/docs/en/quickstart | 05 - Git 統合（初回セットアップ） |
+| Code Review | https://code.claude.com/docs/en/code-review | 06 - コードレビュー |
+| Built-in Commands | https://code.claude.com/docs/en/commands | 01 - 対話モード（コマンド一覧） |
+| Tools Reference | https://code.claude.com/docs/en/tools-reference | 02 - CLI コマンド体系（ツール参照） |
+| Voice Dictation | https://code.claude.com/docs/en/voice-dictation | 01 - 対話モード（音声入力） |
 
 ## 関連ドキュメント
 

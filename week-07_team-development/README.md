@@ -16,6 +16,8 @@
 4. GitLab CI/CDパイプラインにClaude Codeを組み込める
 5. Headless（プログラマティック）実行でCI/CDや自動化スクリプトに組み込める
 6. トークンコストを把握し、効率的なコスト管理ができる
+7. Channels を使って外部イベント（チャット・Webhook・アラート）をセッションに Push できる
+8. `/loop` やクラウドスケジュールタスクで定期実行を設定できる
 
 ## レッスン一覧
 
@@ -27,6 +29,8 @@
 | 4 | [04-gitlab-cicd.md](04-gitlab-cicd.md) | GitLab CI/CD統合 | ★★★☆☆ | マージリクエスト対応・パイプライン設定（ベータ版） |
 | 5 | [05-headless-mode.md](05-headless-mode.md) | Headless/プログラマティック実行 | ★★★☆☆ | `claude -p`によるCLI制御・構造化出力・CI/CD組み込み |
 | 6 | [06-cost-management.md](06-cost-management.md) | コスト管理・最適化 | ★★☆☆☆ | トークン追跡・削減テクニック・チーム支出管理 |
+| 7 | [07-channels.md](07-channels.md) | Channels — 外部イベント連携 | ★★★★☆ | Telegram/Discord/iMessage/Webhook・カスタムチャネル構築 |
+| 8 | [08-scheduled-tasks.md](08-scheduled-tasks.md) | スケジュールタスク | ★★★☆☆ | /loop・Cloud/Desktop スケジューリング・cron 式 |
 | - | [references.md](references.md) | 公式ドキュメントリンク集 | - | Week 7関連の全参考資料 |
 
 ## 推奨学習順序

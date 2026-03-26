@@ -1,6 +1,6 @@
 # Claude Code 8週間シラバス
 
-> 本シラバスは、Claude Code公式ドキュメント（全59ページ）を体系的に学習するための8週間カリキュラムです。
+> 本シラバスは、Claude Code公式ドキュメント（全70ページ）を体系的に学習するための8週間カリキュラムです。
 
 ## カリキュラム設計方針
 
@@ -66,6 +66,7 @@
 | 3 | [03-common-workflows.md](week-02_core-usage/03-common-workflows.md) | 基本ワークフロー |
 | 4 | [04-file-operations.md](week-02_core-usage/04-file-operations.md) | ファイル操作 |
 | 5 | [05-git-integration.md](week-02_core-usage/05-git-integration.md) | Git統合 |
+| 6 | [06-code-review.md](week-02_core-usage/06-code-review.md) | コードレビュー |
 
 ---
 
@@ -234,6 +235,8 @@
 | 4 | [04-gitlab-cicd.md](week-07_team-development/04-gitlab-cicd.md) | GitLab CI/CD統合 |
 | 5 | [05-headless-mode.md](week-07_team-development/05-headless-mode.md) | Headless/プログラマティック実行 |
 | 6 | [06-cost-management.md](week-07_team-development/06-cost-management.md) | コスト管理・最適化 |
+| 7 | [07-channels.md](week-07_team-development/07-channels.md) | Channels — 外部イベント連携 |
+| 8 | [08-scheduled-tasks.md](week-07_team-development/08-scheduled-tasks.md) | スケジュールタスク |
 
 ---
 
