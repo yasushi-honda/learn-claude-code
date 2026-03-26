@@ -6,7 +6,7 @@ import { getWeeks, getAppendices } from "@/lib/content";
 export const metadata: Metadata = {
   title: "Claude Code 体系学習",
   description:
-    "公式ドキュメント全59ページを8週間のカリキュラムとして再構成。入門からエンタープライズ運用まで体系的に学ぶ。",
+    "公式ドキュメント全70ページを8週間のカリキュラムとして再構成。入門からエンタープライズ運用まで体系的に学ぶ。",
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
