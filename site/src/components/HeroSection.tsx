@@ -47,14 +47,10 @@ export default function HeroSection() {
         </h1>
 
         {/* Subtitle */}
-        <p className="animate-fade-in-up delay-2 text-lavender text-lg sm:text-xl max-w-xl mx-auto mb-10 leading-relaxed">
-          公式ドキュメント全70ページを
-          <br className="sm:hidden" />
-          8週間のカリキュラムとして再構成。
+        <p className="animate-fade-in-up delay-2 text-lavender text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+          公式ドキュメント全70ページを8週間のカリキュラムとして再構成。
           <br />
-          入門からエンタープライズ運用まで、
-          <br className="sm:hidden" />
-          体系的に学ぶ。
+          入門からエンタープライズ運用まで、体系的に学ぶ。
         </p>
 
         {/* Terminal prompt */}
