@@ -48,7 +48,7 @@ export default function HeroSection() {
 
         {/* Subtitle */}
         <p className="animate-fade-in-up delay-2 text-lavender text-lg sm:text-xl max-w-xl mx-auto mb-10 leading-relaxed">
-          公式ドキュメント全59ページを
+          公式ドキュメント全70ページを
           <br className="sm:hidden" />
           8週間のカリキュラムとして再構成。
           <br />

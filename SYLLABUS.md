@@ -291,7 +291,7 @@
 | [用語集](appendix/glossary.md) | Claude Code関連の用語定義 | 全般 |
 | [チートシート](appendix/cheatsheet.md) | コマンドチートシート | [CLI reference](https://code.claude.com/docs/en/cli-reference) |
 | [トラブルシューティング](appendix/troubleshooting.md) | よくある問題と解決方法 | [Troubleshooting](https://code.claude.com/docs/en/troubleshooting) |
-| [公式ドキュメントマップ](appendix/official-docs-map.md) | 全59ページの対応表 | 全般 |
+| [公式ドキュメントマップ](appendix/official-docs-map.md) | 全70ページの対応表 | 全般 |
 | [更新ガイド](appendix/update-guide.md) | コンテンツ更新方法 | [Changelog](https://code.claude.com/docs/en/changelog) |
 
 ---

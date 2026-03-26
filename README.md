@@ -41,7 +41,7 @@ Claude Codeは、Anthropicが提供するエージェント型コーディング
 | [用語集](appendix/glossary.md) | Claude Code関連の用語定義 |
 | [チートシート](appendix/cheatsheet.md) | よく使うコマンド一覧 |
 | [トラブルシューティング](appendix/troubleshooting.md) | よくある問題と解決方法 |
-| [公式ドキュメントマップ](appendix/official-docs-map.md) | 公式ドキュメント全59ページの対応表 |
+| [公式ドキュメントマップ](appendix/official-docs-map.md) | 公式ドキュメント全70ページの対応表 |
 | [更新ガイド](appendix/update-guide.md) | 本リポジトリの更新方法 |
 
 ## クイックスタート
