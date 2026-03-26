@@ -4,5 +4,8 @@ generated-images/
 *.png
 !site/public/**/*.png
 
+# Environment
+.envrc
+
 # OS
 .DS_Store
